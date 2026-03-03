@@ -35,7 +35,7 @@
     async function fetchUsers() {
       messages.textContent = "";
       try {
-        const { data, error } = await supabaseClient.from("users").select("*").order('first_name');
+        const { data, error } = await supabaseClient.from("profiles").select("*").order('first_name');
         if (error) throw error;
         userList.innerHTML = "";
         data.forEach(user => {
@@ -62,7 +62,7 @@
 
       try {
         const { data, error } = await supabaseClient
-          .from("users")
+          .from("profiles")
           .insert([{ first_name, last_name, birth_date }]);
 
         if (error) throw error;
@@ -76,4 +76,5 @@
     });
   </script>
 </body>
+
 </html>
