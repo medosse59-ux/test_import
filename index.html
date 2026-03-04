@@ -1,81 +1,110 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Formulaire Utilisateur Supabase</title>
+  <title>Gestion Licenciés</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <h1>Ajouter un utilisateur</h1>
 
-  <form id="user-form">
-    <input type="text" id="first_name" placeholder="Prénom" required />
-    <input type="text" id="last_name" placeholder="Nom" required />
-    <input type="date" id="birth_date" required />
-    <button type="submit">Ajouter</button>
-  </form>
+<h2>Connexion</h2>
 
-  <h2>Utilisateurs existants</h2>
-  <ul id="user-list"></ul>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Mot de passe">
+<button onclick="login()">Se connecter</button>
 
-  <div id="messages" style="color:red; margin-top:1em;"></div>
+<hr>
 
-  <script>
-    // 🔹 Remplace ces valeurs par ton projet
-    const SUPABASE_URL = "https://kvazpeplczyjsimxbuyn.supabase.co"; // Project URL
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2YXpwZXBsY3p5anNpbXhidXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NDYzOTMsImV4cCI6MjA4ODAyMjM5M30.LisaYcfUeKpu1BiCWfsY7gi98uIHNcdpvrZ0BaclNTc";           // Clé anon public
+<h2>Liste des licenciés</h2>
+<div id="userInfo"></div>
+<div id="list"></div>
 
-    const supabaseClient  = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<script>
+const SUPABASE_URL = "https://kvazpeplczyjsimxbuyn.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt2YXpwZXBsY3p5anNpbXhidXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0NDYzOTMsImV4cCI6MjA4ODAyMjM5M30.LisaYcfUeKpu1BiCWfsY7gi98uIHNcdpvrZ0BaclNTc";
 
-    const form = document.getElementById("user-form");
-    const userList = document.getElementById("user-list");
-    const messages = document.getElementById("messages");
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Fonction pour afficher les utilisateurs
-    async function fetchUsers() {
-      messages.textContent = "";
-      try {
-        const { data, error } = await supabaseClient.from("licencies").select("*").order('first_name');
-        if (error) throw error;
-        userList.innerHTML = "";
-        data.forEach(user => {
-          const li = document.createElement("li");
-          li.textContent = `${user.first_name} ${user.last_name} - ${user.birth_date}`;
-          userList.appendChild(li);
-        });
-      } catch (err) {
-        messages.textContent = "Erreur récupération utilisateurs : " + err.message;
-      }
+let currentRole = null;
+
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    alert("Erreur login");
+    return;
+  }
+
+  loadUserRole(data.user.id);
+}
+
+async function loadUserRole(userId) {
+  const { data, error } = await supabaseClient
+    .from("profile")
+    .select("role")
+    .eq("id", userId)
+    .single();
+
+  currentRole = data.role;
+
+  document.getElementById("userInfo").innerHTML =
+    "Rôle connecté : <b>" + currentRole + "</b>";
+
+  loadLicencies();
+}
+
+async function loadLicencies() {
+  const { data, error } = await supabaseClient
+    .from("licencies")
+    .select("*")
+    .order("last_name", { ascending: true });
+
+  const listDiv = document.getElementById("list");
+  listDiv.innerHTML = "";
+
+  data.forEach(licencie => {
+
+    let html = `
+      <div style="border:1px solid gray; padding:10px; margin:5px;">
+        <b>${licencie.first_name} ${licencie.last_name}</b><br>
+        Date de naissance : ${licencie.birth_date}<br>
+        Créé le : ${new Date(licencie.created_at).toLocaleDateString()}
+    `;
+
+    if (currentRole === "admin" || currentRole === "editor") {
+      html += `
+        <br><button onclick="updateBirthDate('${licencie.id}')">
+          Modifier date de naissance
+        </button>
+      `;
     }
 
-    // Test initial pour vérifier URL et clé
-    fetchUsers();
+    html += "</div>";
+    listDiv.innerHTML += html;
+  });
+}
 
-    // Gestion du formulaire
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      messages.textContent = "";
+async function updateBirthDate(id) {
+  const newDate = prompt("Nouvelle date (format YYYY-MM-DD) ?");
 
-      const first_name = document.getElementById("first_name").value;
-      const last_name = document.getElementById("last_name").value;
-      const birth_date = document.getElementById("birth_date").value;
+  const { error } = await supabaseClient
+    .from("licencies")
+    .update({ birth_date: newDate })
+    .eq("id", id);
 
-      try {
-        const { data, error } = await supabaseClient
-          .from("licencies")
-          .insert([{ first_name, last_name, birth_date }]);
+  if (error) {
+    alert("Non autorisé !");
+  } else {
+    loadLicencies();
+  }
+}
+</script>
 
-        if (error) throw error;
-
-        alert("Utilisateur ajouté !");
-        form.reset();
-        fetchUsers(); // Met à jour la liste
-      } catch (err) {
-        messages.textContent = "Erreur ajout utilisateur : " + err.message;
-      }
-    });
-  </script>
 </body>
-
 </html>
-
