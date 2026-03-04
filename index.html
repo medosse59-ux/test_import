@@ -4,6 +4,21 @@
   <meta charset="UTF-8">
   <title>Gestion Licenciés</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  th {
+    background-color: #f2f2f2;
+  }
+  tr:nth-child(even) {
+    background-color: #fafafa;
+  }
+  button {
+    padding: 4px 8px;
+  }
+  </style>
 </head>
 <body>
 
@@ -16,7 +31,6 @@
 <hr>
 
 <h2>Liste des licenciés</h2>
-<div id="userInfo"></div>
 <div id="list"></div>
 
 <script>
@@ -53,9 +67,6 @@ async function loadUserRole(userId) {
 
   currentRole = data.role;
 
-  document.getElementById("userInfo").innerHTML =
-    "Rôle connecté : <b>" + currentRole + "</b>";
-
   loadLicencies();
 }
 
@@ -65,29 +76,54 @@ async function loadLicencies() {
     .select("*")
     .order("last_name", { ascending: true });
 
+  if (error) {
+    alert("Erreur chargement");
+    console.log(error);
+    return;
+  }
+
   const listDiv = document.getElementById("list");
-  listDiv.innerHTML = "";
+
+  let table = `
+    <table border="1" cellpadding="8" cellspacing="0">
+      <tr>
+        <th>Prénom</th>
+        <th>Nom</th>
+        <th>Date de naissance</th>
+        <th>Créé le</th>
+  `;
+
+  if (currentRole === "admin" || currentRole === "editor") {
+    table += `<th>Action</th>`;
+  }
+
+  table += `</tr>`;
 
   data.forEach(licencie => {
-
-    let html = `
-      <div style="border:1px solid gray; padding:10px; margin:5px;">
-        <b>${licencie.first_name} ${licencie.last_name}</b><br>
-        Date de naissance : ${licencie.birth_date}<br>
-        Créé le : ${new Date(licencie.created_at).toLocaleDateString()}
+    table += `
+      <tr>
+        <td>${licencie.first_name}</td>
+        <td>${licencie.last_name}</td>
+        <td>${licencie.birth_date}</td>
+        <td>${new Date(licencie.created_at).toLocaleDateString()}</td>
     `;
 
     if (currentRole === "admin" || currentRole === "editor") {
-      html += `
-        <br><button onclick="updateBirthDate('${licencie.id}')">
-          Modifier date de naissance
-        </button>
+      table += `
+        <td>
+          <button onclick="updateBirthDate('${licencie.id}')">
+            Modifier
+          </button>
+        </td>
       `;
     }
 
-    html += "</div>";
-    listDiv.innerHTML += html;
+    table += `</tr>`;
   });
+
+  table += `</table>`;
+
+  listDiv.innerHTML = table;
 }
 
 async function updateBirthDate(id) {
@@ -108,4 +144,5 @@ async function updateBirthDate(id) {
 
 </body>
 </html>
+
 
