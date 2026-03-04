@@ -17,11 +17,35 @@
   }
   button {
     padding: 4px 8px;
+  }  
+  header {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    background-color: #f0f0f0;
+    border-bottom: 2px solid #ccc;
+  }
+  header img {
+    height: 60px;
+    margin-right: 15px;
+  }
+  header h1 {
+    font-family: 'Arial', sans-serif;
+    color: #006400;
+    font-size: 28px;
+    margin: 0;
   }
   </style>
 </head>
 <body>
 
+<header style="display:flex; align-items:center; padding:10px 20px; background-color:#f0f0f0; border-bottom:2px solid #ccc;">
+  <img src="img/logo.png" alt="Logo Leers OS" style="height:60px; margin-right:15px;">
+  <h1 style="margin:0; font-family:Arial, sans-serif; color:#006400; font-size:28px;">
+    LEERS OS FOOTBALL
+  </h1>
+</header>
+  
 <h2>Connexion</h2>
 
 <input id="email" placeholder="Email">
@@ -144,5 +168,6 @@ async function updateBirthDate(id) {
 
 </body>
 </html>
+
 
 
